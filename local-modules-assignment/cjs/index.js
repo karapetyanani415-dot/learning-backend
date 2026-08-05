@@ -1,0 +1,6 @@
+let math = require('./utils/math')
+let str = require('./utils/strings')
+console.log(math.add(5, 3))
+console.log(math.subtract(10, 4))
+console.log(math.multiply(6, 7))
+console.log(str.capitalize("hello"))
