@@ -1,18 +1,42 @@
-# answer.md
+# CommonJS and ES Modules – Answers
 
-1.require ֆունկցիան միշտ վերադարձնում է միայն `module.exports`-ը։ Քանի որ `exports = { ... }` անելով մենք կտրում ենք կապը `module.exports`-ի հետ, մնում է դատարկ (`{}`), և `require`-ն էլ հենց այդ դատարկ օբյեկտն էլ տպում է `index.js`-ում։
+## 1. What would happen if you wrote `exports = { add, subtract, multiply }` instead of attaching each function to `exports` individually?
 
-2.CJS ֆայլերում `module.exports = ...` և `exports.xxx = ...` անում են նույն բանը սկզբում։ `utils/strings.js`-ը վերագրում է նոր օբյեկտ, իսկ `utils/math.js`-ը ավելացնում է որպես հատկություններ օբյեկտին։ Այո, կարող ենք գրել `math.js`-ը `module.exports`-ով։ Ներմուծող կողմում ոչինչ չի փոխվի, եթե ճիշտ syntax լինի։
+`require()` always returns the value of `module.exports`. At the beginning of a CommonJS module, `exports` is simply a reference to `module.exports`. If you assign a new object to `exports`, you only change the local variable and break its connection with `module.exports`. As a result, `module.exports` remains unchanged (typically an empty object), so `require()` will return an empty object instead of the exported functions.
 
-3.CommonJS-ում ֆայլերի որոնումը կատարվում է Node.js-ի legacy resolution algorithm-ով։ Այս ալգորիթմը, երբ ստանում է `require('./utils/math')`, ինքն է փորձում մի քանի տարբերակ՝ հաջորդաբար.
-- `./utils/math.js`
-- `./utils/math.json`
-- `./utils/math.node`
-- `./utils/math/index.js`
+---
 
-Այսինքն՝ CJS-ի behavior-ը լիովին Node.js-ի սեփականն է։
+## 2. Why does `utils/strings.js` use `module.exports = ...` while `utils/math.js` uses `exports.xxx = ...`? Could `math.js` have been written using `module.exports` instead? What would change when importing it?
 
-ESM-ում այլ է` ES Modules-ը սահմանված է ECMAScript-ի ստանդարտով, ոչ թե Node.js-ով։ Ստանդարտը չունի ֆայլային համակարգի հետ աշխատանք։ Ուստի այն դա կարդում է որպես URL։ Ինչ գրված է, հենց այն էլ պետք է գոյություն ունենա։
+`module.exports` is used when replacing the entire exported object with a new value, while `exports.xxx = ...` is used to add properties to the existing exported object. Both approaches are valid because `exports` initially references `module.exports`.
 
-4.CJS-ը աշխատում է սինխրոն (synchronous)։ESM-ը ասինխրոն (asynchronous) է։
-Քանի որ ամբողջ մոդուլը կառուցվում է սինխրոն, հնարավոր չէ կոդի կեսին սպասել որևէ asynchronous operation-ի՝ առանց ամբողջ աշխատանքը արգելափակելու։
+Yes, `math.js` could also have been written using `module.exports`, for example:
+
+```js
+module.exports = {
+  add,
+  subtract,
+  multiply
+};
+```
+
+As long as the exported object has the same structure, nothing would change on the importing side. `require()` would still return the same object containing the exported functions.
+
+---
+
+## 3. Why does ES Modules require the exact file extension in `import './utils/math.js'`, while CommonJS works with `require('./utils/math')`?
+
+CommonJS uses Node.js's legacy module resolution algorithm. When `require('./utils/math')` is called, Node automatically searches for several possible files, such as:
+
+* `./utils/math.js`
+* `./utils/math.json`
+* `./utils/math.node`
+* `./utils/math/index.js`
+
+ES Modules follow the ECMAScript module specification, which treats module specifiers more like URLs than file system paths. Because of this, the import path must match the file exactly, including its extension.
+
+---
+
+## 4. Name one thing ES Modules can do that CommonJS cannot, and explain why the difference exists.
+
+CJS works synchronously, while ESM is asynchronous. Since the entire module system in CJS is built around synchronous loading, it is not possible to pause in the middle of code execution and wait for an asynchronous operation without blocking the whole process.
